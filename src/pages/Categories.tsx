@@ -10,11 +10,96 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Trash2, Edit, Tag } from 'lucide-react';
+import { 
+  Plus, 
+  Trash2, 
+  Edit, 
+  Tag, 
+  ShoppingCart, 
+  Home, 
+  Car, 
+  Utensils, 
+  Heart, 
+  Book, 
+  Smartphone,
+  Plane,
+  Coffee,
+  Gift,
+  Music,
+  Film,
+  Gamepad2,
+  Shirt,
+  Dumbbell,
+  Briefcase,
+  GraduationCap,
+  Baby,
+  PawPrint,
+  Fuel,
+  Lightbulb,
+  Wifi,
+  CreditCard,
+  Banknote,
+  PiggyBank,
+  Receipt,
+  ShoppingBag,
+  Pizza,
+  Wine,
+  Pill,
+  Stethoscope,
+  Scissors,
+  Wrench,
+  Hammer,
+  Bus,
+  Train,
+  Bike,
+  type LucideIcon
+} from 'lucide-react';
 import { storage, type Category } from '@/lib/localStorage';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
-const ICON_OPTIONS = ['Tag', 'ShoppingCart', 'Home', 'Car', 'Utensils', 'Heart', 'Book', 'Smartphone'];
+const ICON_MAP: Record<string, LucideIcon> = {
+  Tag,
+  ShoppingCart,
+  Home,
+  Car,
+  Utensils,
+  Heart,
+  Book,
+  Smartphone,
+  Plane,
+  Coffee,
+  Gift,
+  Music,
+  Film,
+  Gamepad2,
+  Shirt,
+  Dumbbell,
+  Briefcase,
+  GraduationCap,
+  Baby,
+  PawPrint,
+  Fuel,
+  Lightbulb,
+  Wifi,
+  CreditCard,
+  Banknote,
+  PiggyBank,
+  Receipt,
+  ShoppingBag,
+  Pizza,
+  Wine,
+  Pill,
+  Stethoscope,
+  Scissors,
+  Wrench,
+  Hammer,
+  Bus,
+  Train,
+  Bike,
+};
+
+const ICON_OPTIONS = Object.keys(ICON_MAP);
 const COLOR_OPTIONS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 export const Categories = () => {
@@ -84,10 +169,15 @@ export const Categories = () => {
     });
   };
 
+  const renderIcon = (iconName: string, color?: string, size: string = 'h-5 w-5') => {
+    const IconComponent = ICON_MAP[iconName] || Tag;
+    return <IconComponent className={size} style={color ? { color } : undefined} />;
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Categories</h1>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Categories</h1>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => {
@@ -102,7 +192,7 @@ export const Categories = () => {
               Add Category
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>{editingCategory ? 'Edit' : 'Add'} Category</DialogTitle>
             </DialogHeader>
@@ -118,32 +208,35 @@ export const Categories = () => {
               </div>
               <div>
                 <Label>Icon</Label>
-                <div className="grid grid-cols-4 gap-2 mt-2">
-                  {ICON_OPTIONS.map((icon) => (
-                    <button
-                      key={icon}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, icon })}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        formData.icon === icon
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <Tag className="h-5 w-5 mx-auto" />
-                    </button>
-                  ))}
-                </div>
+                <ScrollArea className="h-[200px] mt-2 rounded-lg border border-border p-2">
+                  <div className="grid grid-cols-6 gap-2">
+                    {ICON_OPTIONS.map((iconName) => (
+                      <button
+                        key={iconName}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, icon: iconName })}
+                        className={`p-2.5 rounded-lg border-2 transition-all flex items-center justify-center ${
+                          formData.icon === iconName
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                        title={iconName}
+                      >
+                        {renderIcon(iconName, formData.icon === iconName ? formData.color : undefined)}
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
               </div>
               <div>
                 <Label>Color</Label>
-                <div className="grid grid-cols-4 gap-2 mt-2">
+                <div className="grid grid-cols-8 gap-2 mt-2">
                   {COLOR_OPTIONS.map((color) => (
                     <button
                       key={color}
                       type="button"
                       onClick={() => setFormData({ ...formData, color })}
-                      className={`h-10 rounded-lg border-2 transition-all ${
+                      className={`h-8 w-8 rounded-lg border-2 transition-all ${
                         formData.color === color
                           ? 'border-foreground scale-110'
                           : 'border-border hover:scale-105'
@@ -161,22 +254,22 @@ export const Categories = () => {
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {categories.length > 0 ? (
           categories.map((category) => (
             <Card key={category.id} className="overflow-hidden">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className="p-2 rounded-lg"
+                      className="p-2 rounded-lg flex-shrink-0"
                       style={{ backgroundColor: category.color + '20' }}
                     >
-                      <Tag className="h-5 w-5" style={{ color: category.color }} />
+                      {renderIcon(category.icon, category.color)}
                     </div>
-                    <CardTitle className="text-lg">{category.name}</CardTitle>
+                    <CardTitle className="text-lg truncate">{category.name}</CardTitle>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 flex-shrink-0">
                     <Button
                       size="icon"
                       variant="ghost"
