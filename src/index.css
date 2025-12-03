@@ -7,59 +7,61 @@ All colors MUST be HSL.
 */
 
 @layer base {
-:root {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+  /* Light Theme */
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
 
-    --card: 220 40% 16%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 220 40% 16%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 198 93% 60%;
-    --primary-foreground: 220 40% 16%;
+    --primary: 198 93% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 146 72% 55%;
-    --secondary-foreground: 220 40% 16%;
+    --secondary: 146 72% 40%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 217 32% 24%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 210 20% 93%;
+    --muted-foreground: 215 20% 45%;
 
-    --accent: 198 93% 60%;
-    --accent-foreground: 220 40% 16%;
+    --accent: 198 93% 45%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
     
     --warning: 38 92% 50%;
-    --warning-foreground: 220 40% 16%;
+    --warning-foreground: 222 47% 11%;
 
-    --border: 217 32% 24%;
-    --input: 217 32% 24%;
-    --ring: 198 93% 60%;
+    --border: 210 20% 88%;
+    --input: 210 20% 88%;
+    --ring: 198 93% 45%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 220 43% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 198 93% 60%;
-    --sidebar-primary-foreground: 220 40% 16%;
-    --sidebar-accent: 217 32% 24%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 32% 20%;
-    --sidebar-ring: 198 93% 60%;
+    --sidebar-background: 210 20% 96%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 198 93% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 90%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 210 20% 85%;
+    --sidebar-ring: 198 93% 45%;
     
-    --success: 146 72% 55%;
-    --success-foreground: 220 40% 16%;
+    --success: 146 72% 40%;
+    --success-foreground: 0 0% 100%;
     
-    --chart-1: 198 93% 60%;
-    --chart-2: 146 72% 55%;
+    --chart-1: 198 93% 45%;
+    --chart-2: 146 72% 40%;
     --chart-3: 38 92% 50%;
     --chart-4: 271 81% 56%;
-    --chart-5: 0 84% 60%;
+    --chart-5: 0 84% 55%;
   }
 
+  /* Dark Theme */
   .dark {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
