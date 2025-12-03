@@ -76,9 +76,9 @@ export const Dashboard = () => {
   }, [expenses]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in w-full overflow-hidden">
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Total Expenses"
           value={`$${stats.totalExpenses.toFixed(2)}`}
@@ -114,13 +114,13 @@ export const Dashboard = () => {
       </div>
 
       {/* Charts */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         {/* Monthly Expenses Chart */}
-        <Card>
+        <Card className="min-w-0">
           <CardHeader>
-            <CardTitle>Monthly Expenses</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Monthly Expenses</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-2 sm:p-6">
             <ChartContainer
               config={{
                 expenses: {
@@ -128,15 +128,20 @@ export const Dashboard = () => {
                   color: "hsl(var(--chart-1))",
                 },
               }}
-              className="h-[300px]"
+              className="h-[250px] sm:h-[300px] w-full"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyData}>
+                <BarChart data={monthlyData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
+                  <XAxis 
+                    dataKey="month" 
+                    stroke="hsl(var(--muted-foreground))" 
+                    tick={{ fontSize: 10 }}
+                    interval={0}
+                  />
+                  <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
                   <Tooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="expenses" fill="hsl(var(--chart-1))" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="expenses" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
@@ -144,11 +149,11 @@ export const Dashboard = () => {
         </Card>
 
         {/* Category Distribution */}
-        <Card>
+        <Card className="min-w-0">
           <CardHeader>
-            <CardTitle>Expenses by Category</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Expenses by Category</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-2 sm:p-6">
             {categoryData.length > 0 ? (
               <ChartContainer
                 config={{
@@ -156,17 +161,17 @@ export const Dashboard = () => {
                     label: "Amount",
                   },
                 }}
-                className="h-[300px]"
+                className="h-[250px] sm:h-[300px] w-full"
               >
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <PieChart margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                     <Pie
                       data={categoryData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
                       label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                      outerRadius={80}
+                      outerRadius={60}
                       fill="hsl(var(--chart-1))"
                       dataKey="value"
                     >
@@ -179,7 +184,7 @@ export const Dashboard = () => {
                 </ResponsiveContainer>
               </ChartContainer>
             ) : (
-              <div className="flex h-[300px] items-center justify-center text-muted-foreground">
+              <div className="flex h-[250px] sm:h-[300px] items-center justify-center text-muted-foreground">
                 No expense data available
               </div>
             )}
@@ -188,25 +193,25 @@ export const Dashboard = () => {
       </div>
 
       {/* Recent Expenses */}
-      <Card>
+      <Card className="min-w-0">
         <CardHeader>
-          <CardTitle>Recent Expenses</CardTitle>
+          <CardTitle className="text-base sm:text-lg">Recent Expenses</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           {expenses.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {expenses.slice(-5).reverse().map((expense) => (
-                <div key={expense.id} className="flex items-center justify-between p-4 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/70 transition-colors">
-                  <div>
-                    <p className="font-medium">{expense.description}</p>
-                    <p className="text-sm text-muted-foreground">{expense.category} • {new Date(expense.date).toLocaleDateString()}</p>
+                <div key={expense.id} className="flex items-center justify-between p-3 sm:p-4 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/70 transition-colors gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium truncate text-sm sm:text-base">{expense.description}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">{expense.category} • {new Date(expense.date).toLocaleDateString()}</p>
                   </div>
-                  <p className="text-lg font-bold text-destructive">-${expense.amount.toFixed(2)}</p>
+                  <p className="text-sm sm:text-lg font-bold text-destructive whitespace-nowrap">-${expense.amount.toFixed(2)}</p>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 text-muted-foreground">
+            <div className="text-center py-8 sm:py-12 text-muted-foreground text-sm sm:text-base">
               No expenses yet. Add your first expense to get started!
             </div>
           )}
