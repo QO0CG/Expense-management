@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Download, Upload, Trash2, Moon, Sun } from 'lucide-react';
 import { storage } from '@/lib/localStorage';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +19,21 @@ import {
 
 export const Settings = () => {
   const { toast } = useToast();
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const isDark = savedTheme === 'dark' || (!savedTheme && true);
+    setIsDarkMode(isDark);
+    document.documentElement.classList.toggle('dark', isDark);
+  }, []);
+
+  const toggleTheme = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    localStorage.setItem('theme', newMode ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', newMode);
+  };
 
   const handleExport = () => {
     const data = {
@@ -90,6 +107,32 @@ export const Settings = () => {
     <div className="max-w-2xl space-y-6 animate-fade-in">
       <h1 className="text-3xl font-bold">Settings</h1>
 
+      {/* Theme Toggle */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+          <CardDescription>Customize how the app looks</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {isDarkMode ? (
+                <Moon className="h-5 w-5 text-primary" />
+              ) : (
+                <Sun className="h-5 w-5 text-warning" />
+              )}
+              <div>
+                <h3 className="font-semibold">Dark Mode</h3>
+                <p className="text-sm text-muted-foreground">
+                  {isDarkMode ? 'Switch to light theme' : 'Switch to dark theme'}
+                </p>
+              </div>
+            </div>
+            <Switch checked={isDarkMode} onCheckedChange={toggleTheme} />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Data Management */}
       <Card>
         <CardHeader>
@@ -97,30 +140,54 @@ export const Settings = () => {
           <CardDescription>Export, import, or clear your data</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold">Export Data</h3>
-              <p className="text-sm text-muted-foreground">Download all your data as JSON</p>
+          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Download className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Export Data</h3>
+                <p className="text-sm text-muted-foreground">Download all your data as JSON</p>
+              </div>
             </div>
-            <Button onClick={handleExport}>Export</Button>
+            <Button onClick={handleExport} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
           </div>
           
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold">Import Data</h3>
-              <p className="text-sm text-muted-foreground">Restore data from a backup file</p>
+          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-secondary/10">
+                <Upload className="h-5 w-5 text-secondary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Import Data</h3>
+                <p className="text-sm text-muted-foreground">Restore data from a backup file</p>
+              </div>
             </div>
-            <Button onClick={handleImport} variant="outline">Import</Button>
+            <Button onClick={handleImport} variant="secondary" className="gap-2">
+              <Upload className="h-4 w-4" />
+              Import
+            </Button>
           </div>
           
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold">Clear All Data</h3>
-              <p className="text-sm text-muted-foreground">Permanently delete all data</p>
+          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-destructive/10">
+                <Trash2 className="h-5 w-5 text-destructive" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Clear All Data</h3>
+                <p className="text-sm text-muted-foreground">Permanently delete all data</p>
+              </div>
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive">Clear Data</Button>
+                <Button variant="destructive" className="gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Clear
+                </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -137,48 +204,6 @@ export const Settings = () => {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* App Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>App Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Version</span>
-            <span className="font-semibold">1.0.0</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Storage</span>
-            <span className="font-semibold">Local Storage</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Expenses Count</span>
-            <span className="font-semibold">{storage.getExpenses().length}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Budgets Count</span>
-            <span className="font-semibold">{storage.getBudgets().length}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Categories Count</span>
-            <span className="font-semibold">{storage.getCategories().length}</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Info Card */}
-      <Card className="border-primary/50 bg-primary/5">
-        <CardContent className="flex gap-3 pt-6">
-          <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="text-sm font-semibold">Data Storage</p>
-            <p className="text-sm text-muted-foreground">
-              All your data is stored locally in your browser. Make regular backups using the export feature.
-            </p>
           </div>
         </CardContent>
       </Card>
