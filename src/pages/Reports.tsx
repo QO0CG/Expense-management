@@ -1,6 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { storage } from '@/lib/localStorage';
 import {
   Table,
@@ -10,15 +9,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Download, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
+import { format, isWithinInterval } from 'date-fns';
+import { ReportDownloadDialog } from '@/components/ReportDownloadDialog';
+import { ReportChart } from '@/components/ReportChart';
 
 export const Reports = () => {
   const expenses = storage.getExpenses();
   const budgets = storage.getBudgets();
-  const categories = storage.getCategories();
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const monthlyReport = useMemo(() => {
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -62,92 +66,99 @@ export const Reports = () => {
     })).sort((a, b) => b.total - a.total);
   }, [expenses]);
 
-  const downloadPDF = () => {
+  const downloadPDF = async (startDate: Date, endDate: Date) => {
+    setIsGenerating(true);
+    
     try {
       const doc = new jsPDF();
+      
+      // Filter expenses by date range
+      const filteredExpenses = expenses.filter(e => {
+        const expenseDate = new Date(e.date);
+        return isWithinInterval(expenseDate, { start: startDate, end: endDate });
+      });
+
+      const dateRangeText = `${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')}`;
       const currentDate = new Date().toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
-      const currentYear = new Date().getFullYear();
 
-      // Header
-      doc.setFontSize(24);
-      doc.setTextColor(41, 98, 255);
-      doc.text('Financial Report', 105, 20, { align: 'center' });
-      
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Generated on ${currentDate}`, 105, 28, { align: 'center' });
-
-      // Summary Section
-      doc.setFontSize(14);
-      doc.setTextColor(40, 40, 40);
-      doc.text('Summary', 14, 42);
-
-      const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-      const totalBudgets = budgets.reduce((sum, b) => sum + b.amount, 0);
-
-      doc.setFontSize(10);
-      doc.setTextColor(80, 80, 80);
-      doc.text(`Total Expenses: $${totalExpenses.toFixed(2)}`, 14, 50);
-      doc.text(`Total Budgets: $${totalBudgets.toFixed(2)}`, 14, 56);
-      doc.text(`Number of Transactions: ${expenses.length}`, 14, 62);
-      doc.text(`Categories: ${categories.length}`, 14, 68);
-
-      // Monthly Report Table
-      let yPosition = 80;
-      doc.setFontSize(14);
-      doc.setTextColor(40, 40, 40);
-      doc.text(`Monthly Expenses - ${currentYear}`, 14, yPosition);
-
-      autoTable(doc, {
-        startY: yPosition + 5,
-        head: [['Month', 'Total', 'Transactions', 'Average']],
-        body: monthlyReport.map(row => [
-          row.month,
-          `$${row.total.toFixed(2)}`,
-          row.count.toString(),
-          `$${row.average.toFixed(2)}`
-        ]),
-        headStyles: {
-          fillColor: [41, 98, 255],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold',
-        },
-        alternateRowStyles: {
-          fillColor: [245, 247, 250],
-        },
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-        },
-        columnStyles: {
-          0: { cellWidth: 40 },
-          1: { cellWidth: 40, halign: 'right' },
-          2: { cellWidth: 40, halign: 'right' },
-          3: { cellWidth: 40, halign: 'right' },
-        },
+      // Calculate filtered statistics
+      const filteredCategoryTotals: Record<string, { total: number; count: number }> = {};
+      filteredExpenses.forEach(expense => {
+        if (!filteredCategoryTotals[expense.category]) {
+          filteredCategoryTotals[expense.category] = { total: 0, count: 0 };
+        }
+        filteredCategoryTotals[expense.category].total += expense.amount;
+        filteredCategoryTotals[expense.category].count += 1;
       });
 
-      // Category Report Table
-      yPosition = (doc as any).lastAutoTable.finalY + 15;
-      
-      if (yPosition > 240) {
-        doc.addPage();
-        yPosition = 20;
-      }
+      const filteredCategoryReport = Object.entries(filteredCategoryTotals)
+        .map(([category, data]) => ({
+          category,
+          total: data.total,
+          count: data.count,
+          average: data.total / data.count,
+        }))
+        .sort((a, b) => b.total - a.total);
 
+      // ===== PAGE 1: Header & Summary =====
+      doc.setFillColor(41, 98, 255);
+      doc.rect(0, 0, 210, 45, 'F');
+      
+      doc.setFontSize(28);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Financial Report', 105, 22, { align: 'center' });
+      
+      doc.setFontSize(11);
+      doc.setTextColor(220, 220, 255);
+      doc.text(dateRangeText, 105, 32, { align: 'center' });
+      doc.text(`Generated: ${currentDate}`, 105, 40, { align: 'center' });
+
+      // Summary Cards
+      const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+      const totalBudgets = budgets.reduce((sum, b) => sum + b.amount, 0);
+      const avgExpense = filteredExpenses.length > 0 ? totalExpenses / filteredExpenses.length : 0;
+
+      doc.setFontSize(14);
+      doc.setTextColor(40, 40, 40);
+      doc.text('Summary Overview', 14, 58);
+
+      const summaryData = [
+        { label: 'Total Expenses', value: `$${totalExpenses.toFixed(2)}`, color: [239, 68, 68] },
+        { label: 'Total Budgets', value: `$${totalBudgets.toFixed(2)}`, color: [34, 197, 94] },
+        { label: 'Transactions', value: filteredExpenses.length.toString(), color: [59, 130, 246] },
+        { label: 'Avg. Expense', value: `$${avgExpense.toFixed(2)}`, color: [168, 85, 247] },
+      ];
+
+      let xPos = 14;
+      summaryData.forEach((item) => {
+        doc.setFillColor(item.color[0], item.color[1], item.color[2]);
+        doc.roundedRect(xPos, 64, 44, 28, 3, 3, 'F');
+        
+        doc.setFontSize(9);
+        doc.setTextColor(255, 255, 255);
+        doc.text(item.label, xPos + 22, 74, { align: 'center' });
+        
+        doc.setFontSize(12);
+        doc.text(item.value, xPos + 22, 86, { align: 'center' });
+        
+        xPos += 48;
+      });
+
+      // ===== Expenses by Category Table =====
+      let yPosition = 105;
       doc.setFontSize(14);
       doc.setTextColor(40, 40, 40);
       doc.text('Expenses by Category', 14, yPosition);
 
-      if (categoryReport.length > 0) {
+      if (filteredCategoryReport.length > 0) {
         autoTable(doc, {
           startY: yPosition + 5,
-          head: [['Category', 'Total', 'Transactions', 'Average']],
-          body: categoryReport.map(row => [
+          head: [['Category', 'Total', 'Count', 'Average']],
+          body: filteredCategoryReport.map(row => [
             row.category,
             `$${row.total.toFixed(2)}`,
             row.count.toString(),
@@ -157,27 +168,28 @@ export const Reports = () => {
             fillColor: [34, 197, 94],
             textColor: [255, 255, 255],
             fontStyle: 'bold',
+            halign: 'center',
           },
           alternateRowStyles: {
             fillColor: [245, 247, 250],
           },
           styles: {
             fontSize: 9,
-            cellPadding: 3,
+            cellPadding: 4,
           },
           columnStyles: {
-            0: { cellWidth: 40 },
-            1: { cellWidth: 40, halign: 'right' },
-            2: { cellWidth: 40, halign: 'right' },
-            3: { cellWidth: 40, halign: 'right' },
+            0: { cellWidth: 50 },
+            1: { cellWidth: 35, halign: 'right' },
+            2: { cellWidth: 30, halign: 'center' },
+            3: { cellWidth: 35, halign: 'right' },
           },
         });
       }
 
-      // Budgets Table
-      yPosition = (doc as any).lastAutoTable?.finalY + 15 || yPosition + 15;
+      // ===== Budget Overview Table =====
+      yPosition = (doc as any).lastAutoTable?.finalY + 15 || yPosition + 20;
       
-      if (yPosition > 240) {
+      if (yPosition > 200) {
         doc.addPage();
         yPosition = 20;
       }
@@ -188,118 +200,178 @@ export const Reports = () => {
 
       if (budgets.length > 0) {
         const budgetData = budgets.map(budget => {
-          const spent = expenses
+          const spent = filteredExpenses
             .filter(e => e.category === budget.category)
             .reduce((sum, e) => sum + e.amount, 0);
           const remaining = budget.amount - spent;
           const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
+          const status = percentage >= 100 ? 'Over' : percentage >= 80 ? 'Warning' : 'Good';
           
           return [
             budget.category,
             `$${budget.amount.toFixed(2)}`,
             `$${spent.toFixed(2)}`,
             `$${remaining.toFixed(2)}`,
-            `${percentage.toFixed(1)}%`
+            `${percentage.toFixed(0)}%`,
+            status
           ];
         });
 
         autoTable(doc, {
           startY: yPosition + 5,
-          head: [['Category', 'Budget', 'Spent', 'Remaining', 'Used']],
+          head: [['Category', 'Budget', 'Spent', 'Remaining', 'Used', 'Status']],
           body: budgetData,
           headStyles: {
             fillColor: [245, 158, 11],
             textColor: [255, 255, 255],
             fontStyle: 'bold',
+            halign: 'center',
           },
           alternateRowStyles: {
             fillColor: [245, 247, 250],
           },
           styles: {
             fontSize: 9,
-            cellPadding: 3,
+            cellPadding: 4,
           },
           columnStyles: {
-            0: { cellWidth: 35 },
-            1: { cellWidth: 30, halign: 'right' },
-            2: { cellWidth: 30, halign: 'right' },
-            3: { cellWidth: 30, halign: 'right' },
-            4: { cellWidth: 25, halign: 'right' },
+            0: { cellWidth: 32 },
+            1: { cellWidth: 28, halign: 'right' },
+            2: { cellWidth: 28, halign: 'right' },
+            3: { cellWidth: 28, halign: 'right' },
+            4: { cellWidth: 22, halign: 'center' },
+            5: { cellWidth: 22, halign: 'center' },
+          },
+          didParseCell: (data) => {
+            if (data.section === 'body' && data.column.index === 5) {
+              const status = data.cell.raw as string;
+              if (status === 'Over') {
+                data.cell.styles.textColor = [239, 68, 68];
+                data.cell.styles.fontStyle = 'bold';
+              } else if (status === 'Warning') {
+                data.cell.styles.textColor = [245, 158, 11];
+              } else {
+                data.cell.styles.textColor = [34, 197, 94];
+              }
+            }
           },
         });
       }
 
-      // All Expenses Detail
-      yPosition = (doc as any).lastAutoTable?.finalY + 15 || yPosition + 15;
-      
-      if (yPosition > 200 || expenses.length > 10) {
+      // ===== PAGE 2: Charts =====
+      if (chartRef.current && filteredCategoryReport.length > 0) {
         doc.addPage();
-        yPosition = 20;
+        
+        doc.setFillColor(99, 102, 241);
+        doc.rect(0, 0, 210, 25, 'F');
+        doc.setFontSize(18);
+        doc.setTextColor(255, 255, 255);
+        doc.text('Visual Analytics', 105, 16, { align: 'center' });
+
+        try {
+          const canvas = await html2canvas(chartRef.current, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false,
+          });
+          
+          const imgData = canvas.toDataURL('image/png');
+          const imgWidth = 180;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          
+          doc.addImage(imgData, 'PNG', 15, 35, imgWidth, Math.min(imgHeight, 180));
+        } catch (chartError) {
+          console.warn('Could not capture chart:', chartError);
+          doc.setFontSize(12);
+          doc.setTextColor(100, 100, 100);
+          doc.text('Chart visualization not available', 105, 60, { align: 'center' });
+        }
       }
 
-      doc.setFontSize(14);
-      doc.setTextColor(40, 40, 40);
-      doc.text('Expense Details', 14, yPosition);
+      // ===== FINAL PAGE: Expense Details =====
+      doc.addPage();
+      
+      doc.setFillColor(59, 130, 246);
+      doc.rect(0, 0, 210, 25, 'F');
+      doc.setFontSize(18);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Expense Details', 105, 16, { align: 'center' });
 
-      if (expenses.length > 0) {
-        const expenseData = expenses
+      if (filteredExpenses.length > 0) {
+        const expenseData = filteredExpenses
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .map(expense => [
-            new Date(expense.date).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            }),
-            expense.description,
+            format(new Date(expense.date), 'MMM d, yyyy'),
+            expense.description.length > 35 ? expense.description.substring(0, 35) + '...' : expense.description,
             expense.category,
             `$${expense.amount.toFixed(2)}`
           ]);
 
         autoTable(doc, {
-          startY: yPosition + 5,
+          startY: 35,
           head: [['Date', 'Description', 'Category', 'Amount']],
           body: expenseData,
           headStyles: {
-            fillColor: [99, 102, 241],
+            fillColor: [59, 130, 246],
             textColor: [255, 255, 255],
             fontStyle: 'bold',
+            halign: 'center',
           },
           alternateRowStyles: {
             fillColor: [245, 247, 250],
           },
           styles: {
             fontSize: 9,
-            cellPadding: 3,
+            cellPadding: 4,
           },
           columnStyles: {
-            0: { cellWidth: 35 },
-            1: { cellWidth: 70 },
+            0: { cellWidth: 32 },
+            1: { cellWidth: 80 },
             2: { cellWidth: 40 },
-            3: { cellWidth: 30, halign: 'right' },
+            3: { cellWidth: 28, halign: 'right' },
           },
         });
+      } else {
+        doc.setFontSize(12);
+        doc.setTextColor(100, 100, 100);
+        doc.text('No expenses found for this period', 105, 60, { align: 'center' });
       }
 
       // Footer on each page
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
+        
+        doc.setDrawColor(200, 200, 200);
+        doc.line(14, doc.internal.pageSize.height - 18, 196, doc.internal.pageSize.height - 18);
+        
         doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
+        doc.setTextColor(130, 130, 130);
         doc.text(
           `Page ${i} of ${pageCount}`,
           105,
           doc.internal.pageSize.height - 10,
           { align: 'center' }
         );
+        doc.text(
+          'Financial Report - Confidential',
+          14,
+          doc.internal.pageSize.height - 10
+        );
+        doc.text(
+          format(new Date(), 'yyyy-MM-dd'),
+          196,
+          doc.internal.pageSize.height - 10,
+          { align: 'right' }
+        );
       }
 
-      // Save the PDF
-      doc.save(`Financial_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+      const fileName = `Financial_Report_${format(startDate, 'yyyy-MM-dd')}_to_${format(endDate, 'yyyy-MM-dd')}.pdf`;
+      doc.save(fileName);
 
       toast({
         title: 'Report Downloaded',
-        description: 'Your financial report has been saved as a PDF file.',
+        description: `Your financial report for ${dateRangeText} has been saved.`,
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -308,6 +380,8 @@ export const Reports = () => {
         description: 'Failed to generate PDF report. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -315,10 +389,16 @@ export const Reports = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-3xl font-bold">Reports</h1>
-        <Button onClick={downloadPDF} className="gap-2">
-          <Download className="h-4 w-4" />
-          Download PDF Report
-        </Button>
+        <ReportDownloadDialog onDownload={downloadPDF} isGenerating={isGenerating} />
+      </div>
+
+      {/* Hidden chart for PDF capture */}
+      <div className="fixed -left-[9999px] -top-[9999px]">
+        <ReportChart 
+          categoryData={categoryReport}
+          monthlyData={monthlyReport}
+          chartRef={chartRef}
+        />
       </div>
 
       {/* Monthly Report */}
