@@ -17,6 +17,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Trash2, Edit } from 'lucide-react';
 import { storage, type Budget } from '@/lib/localStorage';
@@ -26,6 +36,7 @@ export const Budgets = () => {
   const [budgets, setBudgets] = useState<Budget[]>(storage.getBudgets());
   const [isOpen, setIsOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [deletingBudget, setDeletingBudget] = useState<Budget | null>(null);
   const categories = storage.getCategories();
   const expenses = storage.getExpenses();
   const { toast } = useToast();
@@ -95,13 +106,16 @@ export const Budgets = () => {
     setIsOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    storage.deleteBudget(id);
-    setBudgets(storage.getBudgets());
-    toast({
-      title: "Success",
-      description: "Budget deleted successfully",
-    });
+  const confirmDelete = () => {
+    if (deletingBudget) {
+      storage.deleteBudget(deletingBudget.id);
+      setBudgets(storage.getBudgets());
+      toast({
+        title: "Success",
+        description: "Budget deleted successfully",
+      });
+      setDeletingBudget(null);
+    }
   };
 
   return (
@@ -201,7 +215,7 @@ export const Budgets = () => {
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => handleDelete(budget.id)}
+                        onClick={() => setDeletingBudget(budget)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -237,6 +251,24 @@ export const Budgets = () => {
           </Card>
         )}
       </div>
+
+      <AlertDialog open={!!deletingBudget} onOpenChange={(open) => !open && setDeletingBudget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Budget</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the budget for "{deletingBudget?.category}"? 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
