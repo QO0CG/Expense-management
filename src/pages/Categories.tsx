@@ -10,6 +10,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   Plus, 
   Trash2, 
@@ -106,6 +116,7 @@ export const Categories = () => {
   const [categories, setCategories] = useState<Category[]>(storage.getCategories());
   const [isOpen, setIsOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -160,13 +171,16 @@ export const Categories = () => {
     setIsOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    storage.deleteCategory(id);
-    setCategories(storage.getCategories());
-    toast({
-      title: "Success",
-      description: "Category deleted successfully",
-    });
+  const confirmDelete = () => {
+    if (deletingCategory) {
+      storage.deleteCategory(deletingCategory.id);
+      setCategories(storage.getCategories());
+      toast({
+        title: "Success",
+        description: "Category deleted successfully",
+      });
+      setDeletingCategory(null);
+    }
   };
 
   const renderIcon = (iconName: string, color?: string, size: string = 'h-5 w-5') => {
@@ -208,14 +222,14 @@ export const Categories = () => {
               </div>
               <div>
                 <Label>Icon</Label>
-                <ScrollArea className="h-[200px] mt-2 rounded-lg border border-border p-2">
+                <ScrollArea className="h-[200px] mt-2 rounded-xl border border-border p-2">
                   <div className="grid grid-cols-6 gap-2">
                     {ICON_OPTIONS.map((iconName) => (
                       <button
                         key={iconName}
                         type="button"
                         onClick={() => setFormData({ ...formData, icon: iconName })}
-                        className={`p-2.5 rounded-lg border-2 transition-all flex items-center justify-center ${
+                        className={`p-2.5 rounded-xl border-2 transition-all flex items-center justify-center ${
                           formData.icon === iconName
                             ? 'border-primary bg-primary/10'
                             : 'border-border hover:border-primary/50'
@@ -236,7 +250,7 @@ export const Categories = () => {
                       key={color}
                       type="button"
                       onClick={() => setFormData({ ...formData, color })}
-                      className={`h-8 w-8 rounded-lg border-2 transition-all ${
+                      className={`h-8 w-8 rounded-xl border-2 transition-all ${
                         formData.color === color
                           ? 'border-foreground scale-110'
                           : 'border-border hover:scale-105'
@@ -262,7 +276,7 @@ export const Categories = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className="p-2 rounded-lg flex-shrink-0"
+                      className="p-2 rounded-xl flex-shrink-0"
                       style={{ backgroundColor: category.color + '20' }}
                     >
                       {renderIcon(category.icon, category.color)}
@@ -280,7 +294,7 @@ export const Categories = () => {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => handleDelete(category.id)}
+                      onClick={() => setDeletingCategory(category)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -297,6 +311,24 @@ export const Categories = () => {
           </Card>
         )}
       </div>
+
+      <AlertDialog open={!!deletingCategory} onOpenChange={(open) => !open && setDeletingCategory(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deletingCategory?.name}"? 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
