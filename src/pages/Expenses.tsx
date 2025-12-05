@@ -17,6 +17,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Plus, Trash2, Edit } from 'lucide-react';
 import { storage, type Expense } from '@/lib/localStorage';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +35,7 @@ export const Expenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>(storage.getExpenses());
   const [isOpen, setIsOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
   const categories = storage.getCategories();
   const { toast } = useToast();
 
@@ -93,13 +104,16 @@ export const Expenses = () => {
     setIsOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    storage.deleteExpense(id);
-    setExpenses(storage.getExpenses());
-    toast({
-      title: "Success",
-      description: "Expense deleted successfully",
-    });
+  const confirmDelete = () => {
+    if (deletingExpense) {
+      storage.deleteExpense(deletingExpense.id);
+      setExpenses(storage.getExpenses());
+      toast({
+        title: "Success",
+        description: "Expense deleted successfully",
+      });
+      setDeletingExpense(null);
+    }
   };
 
   return (
@@ -192,7 +206,7 @@ export const Expenses = () => {
               {expenses.map((expense) => (
                 <div
                   key={expense.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/70 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-xl bg-sidebar-accent hover:bg-sidebar-accent/70 transition-colors"
                 >
                   <div className="flex-1">
                     <h3 className="font-semibold">{expense.description}</h3>
@@ -215,7 +229,7 @@ export const Expenses = () => {
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => handleDelete(expense.id)}
+                        onClick={() => setDeletingExpense(expense)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -231,6 +245,24 @@ export const Expenses = () => {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!deletingExpense} onOpenChange={(open) => !open && setDeletingExpense(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deletingExpense?.description}"? 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

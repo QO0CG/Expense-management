@@ -1,10 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Download, Upload, Trash2, Moon, Sun } from 'lucide-react';
+import { Download, Upload, Trash2 } from 'lucide-react';
 import { storage } from '@/lib/localStorage';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,24 +14,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export const Settings = () => {
   const { toast } = useToast();
-  const [isDarkMode, setIsDarkMode] = useState(true);
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const isDark = savedTheme === 'dark' || (!savedTheme && true);
-    setIsDarkMode(isDark);
-    document.documentElement.classList.toggle('dark', isDark);
-  }, []);
-
-  const toggleTheme = () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    localStorage.setItem('theme', newMode ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', newMode);
-  };
 
   const handleExport = () => {
     const data = {
@@ -115,20 +99,13 @@ export const Settings = () => {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {isDarkMode ? (
-                <Moon className="h-5 w-5 text-primary" />
-              ) : (
-                <Sun className="h-5 w-5 text-warning" />
-              )}
-              <div>
-                <h3 className="font-semibold">Dark Mode</h3>
-                <p className="text-sm text-muted-foreground">
-                  {isDarkMode ? 'Switch to light theme' : 'Switch to dark theme'}
-                </p>
-              </div>
+            <div>
+              <h3 className="font-semibold">Theme</h3>
+              <p className="text-sm text-muted-foreground">
+                Switch between light and dark mode
+              </p>
             </div>
-            <Switch checked={isDarkMode} onCheckedChange={toggleTheme} />
+            <ThemeToggle />
           </div>
         </CardContent>
       </Card>
@@ -140,9 +117,9 @@ export const Settings = () => {
           <CardDescription>Export, import, or clear your data</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
+              <div className="p-2 rounded-xl bg-primary/10">
                 <Download className="h-5 w-5 text-primary" />
               </div>
               <div>
@@ -156,9 +133,9 @@ export const Settings = () => {
             </Button>
           </div>
           
-          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-secondary/10">
+              <div className="p-2 rounded-xl bg-secondary/10">
                 <Upload className="h-5 w-5 text-secondary" />
               </div>
               <div>
@@ -172,9 +149,9 @@ export const Settings = () => {
             </Button>
           </div>
           
-          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-border">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-destructive/10">
+              <div className="p-2 rounded-xl bg-destructive/10">
                 <Trash2 className="h-5 w-5 text-destructive" />
               </div>
               <div>
@@ -198,7 +175,7 @@ export const Settings = () => {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleClearData}>
+                  <AlertDialogAction onClick={handleClearData} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                     Yes, clear all data
                   </AlertDialogAction>
                 </AlertDialogFooter>
